@@ -241,9 +241,10 @@ static int setup_fdt(struct kvm *kvm)
 	if (kvm->cfg.arch.dump_dtb_filename)
 		dump_fdt(kvm->cfg.arch.dump_dtb_filename, fdt_dest);
 
-	if (kvm->cfg.arch.is_realm)
+	if (kvm->cfg.arch.is_realm){
 		kvm_arm_realm_populate_dtb(kvm);
-
+		kvm_arm_attach_dev(kvm);
+	}
 	return 0;
 }
 late_init(setup_fdt);

@@ -1372,8 +1372,7 @@ static int vfio_pci_configure_dev_irqs(struct kvm *kvm, struct vfio_device *vdev
 
 int vfio_pci_setup_device(struct kvm *kvm, struct vfio_device *vdev)
 {
-	int ret;
-
+	int ret;	
 	ret = vfio_pci_configure_dev_regions(kvm, vdev);
 	if (ret) {
 		vfio_dev_err(vdev, "failed to configure regions");
@@ -1394,9 +1393,7 @@ int vfio_pci_setup_device(struct kvm *kvm, struct vfio_device *vdev)
 	ret = vfio_pci_configure_dev_irqs(kvm, vdev);
 	if (ret) {
 		vfio_dev_err(vdev, "failed to configure IRQs");
-		return ret;
 	}
-
 	return 0;
 }
 

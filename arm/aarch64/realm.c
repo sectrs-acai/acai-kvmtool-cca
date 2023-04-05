@@ -101,12 +101,12 @@ static void realm_init_ipa_range(struct kvm *kvm, u64 start, u64 size)
 		    start, start + size, size);
 
 }
-
-static void __realm_populate(struct kvm *kvm, u64 start, u64 size)
+static void __realm_populate_dev(struct kvm *kvm, u64 start, u64 size, bool dev)
 {
 	struct kvm_cap_arm_rme_populate_realm_args populate_args = {
 		.populate_ipa_base = start,
-		.populate_ipa_size = size
+		.populate_ipa_size = size,
+		.dev_attach = dev,
 	};
 	struct kvm_enable_cap rme_populate_realm = {
 		.cap = KVM_CAP_ARM_RME,
@@ -119,10 +119,21 @@ static void __realm_populate(struct kvm *kvm, u64 start, u64 size)
 		    start, start + size, size);
 }
 
+static void __realm_populate(struct kvm *kvm, u64 start, u64 size)
+{
+	__realm_populate_dev(kvm, start,  size, false);
+}
+
 static void realm_populate(struct kvm *kvm, u64 start, u64 size)
 {
 	realm_init_ipa_range(kvm, start, size);
 	__realm_populate(kvm, start, size);
+}
+
+static void realm_populate_dev(struct kvm *kvm, u64 start, u64 size)
+{
+	realm_init_ipa_range(kvm, start, size);
+	__realm_populate_dev(kvm, start, size, true);
 }
 
 static bool is_arm64_linux_kernel_image(void *header)
@@ -192,6 +203,26 @@ void kvm_arm_realm_populate_dtb(struct kvm *kvm)
 	end = ALIGN(kvm->arch.dtb_guest_start + FDT_MAX_SIZE, SZ_4K);
 	if (end > start)
 		realm_populate(kvm, start, end - start);
+}
+
+void kvm_arm_attach_dev(struct kvm *kvm)
+{
+	pr_err("In kvm_attack_dev \n");
+	u64 dtb_end, start, end;
+
+	dtb_end = ALIGN(kvm->arch.dtb_guest_start + FDT_MAX_SIZE, SZ_4K);
+	start = ALIGN(dtb_end + SZ_4K, SZ_4K);
+	/*
+	 * Same situation as with the initrd, but now it is the DTB which is
+	 * overlapping with the last page of the initrd, because the initrd is
+	 * populated first.
+	 */
+	// if (start < dtb_end)
+	// 	start = initrd_end;
+	end = ALIGN(start + (SZ_4K * 7), SZ_4K);
+	pr_err("Size %llu \n", end-start);
+	if (end > start)
+		realm_populate_dev(kvm, start, end - start);
 }
 
 static void kvm_arm_realm_activate_realm(struct kvm *kvm)
