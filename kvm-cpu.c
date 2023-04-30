@@ -7,6 +7,7 @@
 #include "kvm/mutex.h"
 #include "kvm/barrier.h"
 
+#include <benchmark.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/eventfd.h>
@@ -172,13 +173,16 @@ int kvm_cpu__start(struct kvm_cpu *cpu)
 
 		switch (cpu->kvm_run->exit_reason) {
 		case KVM_EXIT_UNKNOWN:
+			BENCH_LKVM_CPU_EXIT_UNKNOWN();
 			break;
 		case KVM_EXIT_DEBUG:
+			BENCH_LKVM_CPU_EXIT_DEBUG();
 			kvm_cpu__show_registers(cpu);
 			kvm_cpu__show_code(cpu);
 			break;
 		case KVM_EXIT_IO: {
 			bool ret;
+			BENCH_LKVM_CPU_EXIT_IO();
 
 			ret = kvm_cpu__emulate_io(cpu,
 						  cpu->kvm_run->io.port,
@@ -194,6 +198,7 @@ int kvm_cpu__start(struct kvm_cpu *cpu)
 		}
 		case KVM_EXIT_MMIO: {
 			bool ret;
+			BENCH_LKVM_CPU_EXIT_MMIO();
 
 			/*
 			 * If we had MMIO exit, coalesced ring should be processed
@@ -212,12 +217,15 @@ int kvm_cpu__start(struct kvm_cpu *cpu)
 			break;
 		}
 		case KVM_EXIT_INTR:
+			BENCH_LKVM_CPU_EXIT_INTR();
 			if (cpu->is_running)
 				break;
 			goto exit_kvm;
 		case KVM_EXIT_SHUTDOWN:
+			BENCH_LKVM_CPU_EXIT_SHUTDOWN();
 			goto exit_kvm;
 		case KVM_EXIT_SYSTEM_EVENT:
+			BENCH_LKVM_CPU_EXIT_SYSTEM_EVENT();
 			/*
 			 * Print the type of system event and
 			 * treat all system events as shutdown request.
@@ -240,6 +248,7 @@ int kvm_cpu__start(struct kvm_cpu *cpu)
 			break;
 		default: {
 			bool ret;
+			BENCH_LKVM_CPU_EXIT_UNHANDLED();
 
 			ret = kvm_cpu__handle_exit(cpu);
 			if (!ret)
